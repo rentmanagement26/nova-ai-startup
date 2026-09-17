@@ -1,0 +1,8 @@
+node_modules/
+.env
+.vercel
+data.db
+data.db.pre-migration.bak
+generated/
+*.wal
+*.shm
