@@ -183,6 +183,12 @@ app.post('/api/generate', async (req, res) => {
           content: `You are helping with a local software project. Here are the contents of its files for context. Use them to answer questions accurately about this specific codebase.\n\n${req.body.projectContext}`
         });
       }
+
+      messages.push({
+        role: 'system',
+        content: 'You are continuing the current chat thread. Stay focused on the same conversation and build on the earlier messages in this chat. Only switch to a different topic or start a fresh conversation if the user explicitly asks for a new task, new topic, or a new chat.'
+      });
+
       for (const turn of prior) {
         messages.push({ role: 'user', content: turn.prompt });
         messages.push({ role: 'assistant', content: turn.response_text });
