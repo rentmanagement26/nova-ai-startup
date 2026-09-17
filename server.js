@@ -93,6 +93,10 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' })); // room for project-folder context sent to Nemotron
 app.use(express.static('.'));
 
+app.get('/', (_req, res) => {
+  res.sendFile(new URL('./index.html', import.meta.url).pathname);
+});
+
 app.get('/api/models', (_req, res) => {
   res.json(Object.entries(MODELS).map(([id, m]) => ({ id, label: m.label })));
 });
@@ -290,11 +294,14 @@ app.post('/api/generate', async (req, res) => {
   });
 });
 
+
 // Vercel imports this file as a serverless function handler instead of calling listen().
 if (!process.env.VERCEL) {
   app.listen(3000, () => {
     console.log('🚀 AI Proxy Engine Running at http://localhost:3000');
   });
 }
+
+
 
 export default app;
