@@ -99,11 +99,10 @@
       width: 30px;
       height: 30px;
       border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+      object-fit: cover;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
       flex-shrink: 0;
       box-shadow: var(--shadow-sm);
     }
@@ -492,7 +491,7 @@
 
   <div class="sidebar">
     <div class="sidebar-header">
-      <div class="logo-mark">✨</div>
+      <img class="logo-mark" src="/assets/logo.png" alt="Nova logo">
       Nova
     </div>
     <button id="new-chat-btn" onclick="createNewChat()">+ New Chat</button>

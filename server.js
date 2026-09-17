@@ -91,10 +91,12 @@ function rowsToObjects(result) {
 
 const app = express();
 const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+const publicRoot = fileURLToPath(new URL('./public', import.meta.url));
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // room for project-folder context sent to Nemotron
 app.use(express.static(projectRoot));
+app.use(express.static(publicRoot));
 
 app.get('/', (_req, res) => {
   res.sendFile(fileURLToPath(new URL('./index.html', import.meta.url)));
