@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@libsql/client';
+import { fileURLToPath } from 'node:url';
 
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
@@ -89,12 +90,14 @@ function rowsToObjects(result) {
 }
 
 const app = express();
+const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // room for project-folder context sent to Nemotron
-app.use(express.static('.'));
+app.use(express.static(projectRoot));
 
 app.get('/', (_req, res) => {
-  res.sendFile(new URL('./index.html', import.meta.url).pathname);
+  res.sendFile(fileURLToPath(new URL('./index.html', import.meta.url)));
 });
 
 app.get('/api/models', (_req, res) => {
