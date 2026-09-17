@@ -50,9 +50,12 @@ const MODELS = {
 
 // ---- Database: Turso (libSQL) in production, a local libSQL file in development ----
 // Same client API either way — only the connection target changes.
+const tursoDatabaseUrl = process.env.nova_ai_TURSO_DATABASE_URL ?? process.env.TURSO_DATABASE_URL;
+const tursoAuthToken = process.env.nova_ai_TURSO_AUTH_TOKEN ?? process.env.TURSO_AUTH_TOKEN;
+
 const client = createClient(
-  process.env.TURSO_DATABASE_URL
-    ? { url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN }
+  tursoDatabaseUrl
+    ? { url: tursoDatabaseUrl, authToken: tursoAuthToken }
     : { url: 'file:./data.db' }
 );
 
