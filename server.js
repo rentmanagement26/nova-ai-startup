@@ -46,6 +46,14 @@ const MODELS = {
     endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
     chatModel: 'nvidia/nemotron-3-ultra-550b-a55b',
     timeoutMs: 90_000
+  },
+  'kimi-k3': {
+    type: 'chat',
+    label: 'Kimi K3 (Chat)',
+    endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    chatModel: 'moonshotai/kimi-k3',
+    // Thinking is always on for this model, so responses run noticeably longer than Nemotron's.
+    timeoutMs: 180_000
   }
 };
 
@@ -131,7 +139,7 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/api/models', (_req, res) => {
-  res.json(Object.entries(MODELS).map(([id, m]) => ({ id, label: m.label })));
+  res.json(Object.entries(MODELS).map(([id, m]) => ({ id, label: m.label, type: m.type })));
 });
 
 app.get('/api/chats', async (_req, res) => {
