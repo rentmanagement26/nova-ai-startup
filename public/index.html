@@ -566,6 +566,7 @@
         <div id="folder-row" class="folder-row">
           <span id="folder-label">📁 No folder selected</span>
           <button id="folder-btn" onclick="handleFolderButtonClick()">Choose folder</button>
+          <button id="folder-remove-btn" onclick="removeFolder()" style="display:none" title="Forget this folder">Remove</button>
         </div>
         <div class="composer-row">
           <select id="model-select"></select>
@@ -681,6 +682,31 @@ async function loadFolderContext(handle) {
     ? `📁 ${handle.name} — ${fileCount} files loaded${skippedNote}`
     : `📁 ${handle.name} — no readable source files found`;
   setFolderButtonMode('choose');
+  document.getElementById('folder-remove-btn').style.display = '';
+}
+
+async function deleteFolderHandle() {
+  const db = await openFolderDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE_NAME, 'readwrite');
+    tx.objectStore(FOLDER_STORE_NAME).delete(FOLDER_HANDLE_KEY);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function removeFolder() {
+  selectedDirHandle = null;
+  projectContext = '';
+  reconnectHandle = null;
+  setFolderButtonMode('choose');
+  document.getElementById('folder-label').innerText = '📁 No folder selected';
+  document.getElementById('folder-remove-btn').style.display = 'none';
+  try {
+    await deleteFolderHandle();
+  } catch (error) {
+    console.error('Failed to forget folder:', error);
+  }
 }
 
 async function restoreFolder() {
@@ -696,6 +722,7 @@ async function restoreFolder() {
       reconnectHandle = handle;
       document.getElementById('folder-label').innerText = `📁 ${handle.name} — click Reconnect to resume`;
       setFolderButtonMode('reconnect');
+      document.getElementById('folder-remove-btn').style.display = '';
     }
   } catch (error) {
     console.error('Failed to restore remembered folder:', error);

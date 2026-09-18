@@ -22,24 +22,6 @@ const MODELS = {
       prompt, height: 1024, width: 1024, cfg_scale: 1, samples: 1, seed: 0, steps: 4
     })
   },
-  'flux.1-dev': {
-    type: 'image',
-    label: 'FLUX.1 Dev',
-    endpoint: 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.1-dev',
-    timeoutMs: 45_000,
-    buildBody: (prompt) => ({
-      prompt, mode: 'base', height: 1024, width: 1024, cfg_scale: 5, samples: 1, seed: 0, steps: 50
-    })
-  },
-  'flux.1-schnell': {
-    type: 'image',
-    label: 'FLUX.1 Schnell',
-    endpoint: 'https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.1-schnell',
-    timeoutMs: 45_000,
-    buildBody: (prompt) => ({
-      prompt, mode: 'base', height: 1024, width: 1024, cfg_scale: 0, samples: 1, seed: 0, steps: 4
-    })
-  },
   'nemotron-3-ultra': {
     type: 'chat',
     label: 'Nemotron 3 Ultra (Chat)',
@@ -47,13 +29,13 @@ const MODELS = {
     chatModel: 'nvidia/nemotron-3-ultra-550b-a55b',
     timeoutMs: 90_000
   },
-  'kimi-k3': {
+  'nemotron-3.5-lightning': {
     type: 'chat',
-    label: 'Kimi K3 (Chat)',
+    label: 'Nemotron 3.5 Lightning (Chat)',
     endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
-    chatModel: 'moonshotai/kimi-k3',
-    // Thinking is always on for this model, so responses run noticeably longer than Nemotron's.
-    timeoutMs: 180_000
+    chatModel: 'nvidia/nemotron-3.5-lightning-30b-a3b',
+    // Thinking is always on for this model, so responses include reasoning tokens before the answer.
+    timeoutMs: 90_000
   }
 };
 
@@ -345,9 +327,11 @@ app.post('/api/generate', async (req, res) => {
 
 
 // Vercel imports this file as a serverless function handler instead of calling listen().
+// Other hosts (Render, Railway, Fly.io, ...) inject the port to bind via PORT.
 if (!process.env.VERCEL) {
-  app.listen(3000, () => {
-    console.log('🚀 AI Proxy Engine Running at http://localhost:3000');
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`🚀 AI Proxy Engine Running at http://localhost:${port}`);
   });
 }
 
