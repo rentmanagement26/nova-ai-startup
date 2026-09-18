@@ -6,6 +6,8 @@
   <title>Nova — AI Studio</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     /* ---- Light palette (default) ---- */
@@ -59,7 +61,6 @@
       --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
       --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
-
     * { box-sizing: border-box; }
     html, body { height: 100%; }
 
@@ -87,22 +88,20 @@
     .sidebar-header {
       display: flex;
       align-items: center;
-        flex-direction: column;
-        padding: 18px;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 16px;
       margin-bottom: 20px;
       padding: 0 4px;
     }
     .logo-mark {
-         width: 221px;
-    height: 100px;
-      object-fit: contain;
+      width: 180px;
+      height: auto;
+      display: block;
       flex-shrink: 0;
     }
     #new-chat-btn {
-      display: flex;
-      flex-direction: column;
-      padding: 18px;
-    }
+      gap: 8px;
       width: 100%;
       background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
       border: none;
@@ -113,32 +112,48 @@
       padding: 12px 14px;
       border-radius: 12px;
       cursor: pointer;
-      margin-bottom: 18px;
-      box-shadow: var(--shadow-sm);
-      transition: filter 0.2s ease, transform 0.15s ease;
     }
     #new-chat-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
     .chat-list {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 1px;
+      margin: 0 -6px;
+      padding: 0 6px;
     }
+    .chat-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.75;
+      padding: 14px 10px 6px;
+    }
+    .chat-section-label:first-child { padding-top: 4px; }
     .chat-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 10px 8px 10px 12px;
+      padding: 9px 8px 9px 13px;
       border-radius: 10px;
       font-size: 13.5px;
       color: var(--muted);
       cursor: pointer;
+      position: relative;
       transition: background 0.15s ease, color 0.15s ease;
     }
     .chat-item:hover { background: var(--surface-2); color: var(--text); }
-    .chat-item.active { background: var(--surface-2); color: var(--text); font-weight: 600; }
+    .chat-item.active {
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: inset 3px 0 0 var(--accent-a);
+    }
     .chat-item-title {
       flex: 1;
       min-width: 0;
@@ -150,7 +165,7 @@
       flex-shrink: 0;
       width: 22px;
       height: 22px;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       border: none;
@@ -158,8 +173,24 @@
       color: var(--muted);
       border-radius: 6px;
       cursor: pointer;
-    .chat-item:hover .chat-item-delete { display: flex; }
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .chat-item:hover .chat-item-delete,
+    .chat-item:focus-within .chat-item-delete { opacity: 1; }
     .chat-item-delete:hover { background: var(--surface-3); color: var(--danger); }
+    @media (hover: none) {
+      .chat-item-delete { opacity: 1; }
+    }
+    .chat-list-empty {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px 12px;
+      opacity: 0.8;
+    }
 
     /* ---- Main column ---- */
     .main {
@@ -197,9 +228,9 @@
       border-radius: 20px;
     }
     #theme-toggle {
-      width: 180px;
-      height: auto;
-      display: block;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
       border: 1px solid var(--border);
       background: var(--surface-2);
       color: var(--text);
@@ -506,7 +537,7 @@
 
   <div class="sidebar">
     <div class="sidebar-header">
-      <img class="logo-mark" src="/assets/logo.png" alt="Nova logo">
+      <img id="logo-img" class="logo-mark" src="/assets/logo-1.png" alt="Nova logo">
     </div>
     <button id="new-chat-btn" onclick="createNewChat()">+ New Chat</button>
     <div id="chat-list" class="chat-list"></div>
@@ -527,7 +558,7 @@
       <div class="composer-inner">
         <div id="folder-row" class="folder-row">
           <span id="folder-label">📁 No folder selected</span>
-          <button onclick="chooseFolder()">Choose folder</button>
+          <button id="folder-btn" onclick="handleFolderButtonClick()">Choose folder</button>
         </div>
         <div class="composer-row">
           <select id="model-select"></select>
@@ -568,6 +599,111 @@ let currentChatId = null;
 let chats = [];
 let selectedDirHandle = null;
 let projectContext = '';
+let folderButtonMode = 'choose'; // 'choose' | 'reconnect'
+let reconnectHandle = null; // set when a remembered folder needs a permission re-grant
+
+// ---- Remembering the chosen project folder across reloads ----
+// Directory handles can be structured-cloned into IndexedDB, but the *permission*
+// granted for one doesn't survive a reload without a user gesture — so on load we
+// try a silent permission check, and fall back to a one-click "Reconnect" instead
+// of silently forgetting the folder.
+const FOLDER_DB_NAME = 'nova-fs-handles';
+const FOLDER_STORE_NAME = 'handles';
+const FOLDER_HANDLE_KEY = 'projectFolder';
+
+function openFolderDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FOLDER_DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(FOLDER_STORE_NAME);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveFolderHandle(handle) {
+  const db = await openFolderDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE_NAME, 'readwrite');
+    tx.objectStore(FOLDER_STORE_NAME).put(handle, FOLDER_HANDLE_KEY);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadFolderHandle() {
+  const db = await openFolderDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE_NAME, 'readonly');
+    const req = tx.objectStore(FOLDER_STORE_NAME).get(FOLDER_HANDLE_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function setFolderButtonMode(mode) {
+  folderButtonMode = mode;
+  const btn = document.getElementById('folder-btn');
+  btn.innerText = mode === 'reconnect' ? 'Reconnect' : 'Choose folder';
+}
+
+function handleFolderButtonClick() {
+  if (folderButtonMode === 'reconnect') {
+    reconnectFolder();
+  } else {
+    chooseFolder();
+  }
+}
+
+async function loadFolderContext(handle) {
+  const label = document.getElementById('folder-label');
+  selectedDirHandle = handle;
+  label.innerText = `📁 Reading ${handle.name}...`;
+
+  const { context, fileCount, skipped } = await readProjectFiles(handle);
+  projectContext = context;
+
+  const skippedNote = skipped ? ` (${skipped} skipped)` : '';
+  label.innerText = fileCount > 0
+    ? `📁 ${handle.name} — ${fileCount} files loaded${skippedNote}`
+    : `📁 ${handle.name} — no readable source files found`;
+  setFolderButtonMode('choose');
+}
+
+async function restoreFolder() {
+  if (!window.showDirectoryPicker) return;
+  try {
+    const handle = await loadFolderHandle();
+    if (!handle) return;
+
+    const permission = await handle.queryPermission({ mode: 'readwrite' });
+    if (permission === 'granted') {
+      await loadFolderContext(handle);
+    } else {
+      reconnectHandle = handle;
+      document.getElementById('folder-label').innerText = `📁 ${handle.name} — click Reconnect to resume`;
+      setFolderButtonMode('reconnect');
+    }
+  } catch (error) {
+    console.error('Failed to restore remembered folder:', error);
+  }
+}
+
+async function reconnectFolder() {
+  if (!reconnectHandle) return;
+  const label = document.getElementById('folder-label');
+  try {
+    const permission = await reconnectHandle.requestPermission({ mode: 'readwrite' });
+    if (permission !== 'granted') {
+      label.innerText = '📁 Permission denied — choose a folder to continue';
+      return;
+    }
+    await loadFolderContext(reconnectHandle);
+    reconnectHandle = null;
+  } catch (error) {
+    console.error('Failed to reconnect folder:', error);
+    label.innerText = '📁 Could not reconnect — choose a folder to continue';
+  }
+}
 
 // ---- Reading a project folder as context for Nemotron ----
 const IGNORED_DIRS = new Set([
@@ -632,6 +768,15 @@ async function readProjectFiles(dirHandle) {
 }
 
 // ---- Theme: defaults to following the OS's own light/dark (day/night) setting ----
+const LOGO_LIGHT_SRC = '/assets/logo-1.png';
+const LOGO_DARK_SRC = '/assets/logo-white.png';
+const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+function updateLogo(theme) {
+  const isDark = theme === 'dark' || (theme === 'auto' && prefersDarkQuery.matches);
+  document.getElementById('logo-img').src = isDark ? LOGO_DARK_SRC : LOGO_LIGHT_SRC;
+}
+
 function applyTheme(theme) {
   const root = document.documentElement;
   const icon = document.getElementById('theme-toggle');
@@ -645,6 +790,7 @@ function applyTheme(theme) {
     icon.title = `Theme: ${theme === 'dark' ? 'Dark' : 'Light'}`;
   }
   localStorage.setItem('theme', theme);
+  updateLogo(theme);
 }
 
 function cycleTheme() {
@@ -652,6 +798,11 @@ function cycleTheme() {
   const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
   applyTheme(next);
 }
+
+// Keep the logo in sync if the OS theme changes while "Auto" is active.
+prefersDarkQuery.addEventListener('change', () => {
+  if ((localStorage.getItem('theme') || 'auto') === 'auto') updateLogo('auto');
+});
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -690,16 +841,10 @@ async function chooseFolder() {
   }
   const label = document.getElementById('folder-label');
   try {
-    selectedDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    label.innerText = `📁 Reading ${selectedDirHandle.name}...`;
-
-    const { context, fileCount, skipped } = await readProjectFiles(selectedDirHandle);
-    projectContext = context;
-
-    const skippedNote = skipped ? ` (${skipped} skipped)` : '';
-    label.innerText = fileCount > 0
-      ? `📁 ${selectedDirHandle.name} — ${fileCount} files loaded${skippedNote}`
-      : `📁 ${selectedDirHandle.name} — no readable source files found`;
+    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    reconnectHandle = null;
+    await loadFolderContext(handle);
+    saveFolderHandle(handle).catch((error) => console.error('Failed to remember folder:', error));
   } catch (error) {
     if (error.name === 'AbortError') return; // user cancelled the picker, no-op
     console.error('Folder picker failed:', error);
@@ -742,10 +887,11 @@ async function loadModels() {
   try {
     const response = await fetch('/api/models');
     const models = await response.json();
-    select.innerHTML = models.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
+    const options = ['<option value="auto">Auto</option>', ...models.map(m => `<option value="${m.id}">${m.label}</option>`)];
+    select.innerHTML = options.join('');
   } catch (error) {
     console.error('Failed to load models:', error);
-    select.innerHTML = '<option value="">Default</option>';
+    select.innerHTML = '<option value="auto">Auto</option>';
   }
   updateComposerForModel();
 }
@@ -753,23 +899,62 @@ async function loadModels() {
 function updateComposerForModel() {
   const model = document.getElementById('model-select').value;
   const isCode = model === 'nemotron-3-ultra';
-  document.getElementById('folder-row').classList.toggle('visible', isCode);
+  const isAuto = model === 'auto';
+  document.getElementById('folder-row').classList.toggle('visible', isCode || isAuto);
   document.querySelector('.hint').innerText = isCode
     ? 'Code generation can take up to a minute for detailed answers.'
+    : isAuto
+    ? 'Auto picks the best model for your prompt — image or code.'
     : 'Image generation typically takes 5–10 seconds.';
   document.getElementById('prompt-input').placeholder = isCode
     ? 'Describe the code you want...'
+    : isAuto
+    ? 'Describe what you want, or ask a coding question...'
     : 'Describe what you want...';
 }
 
-function renderChatList() {
-  const list = document.getElementById('chat-list');
-  list.innerHTML = chats.map(c => `
+const CHAT_SECTION_ORDER = ['Today', 'Yesterday', 'Previous 7 Days', 'Previous 30 Days', 'Older'];
+
+function chatSectionFor(updatedAt) {
+  const startOfDay = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const diffDays = Math.round((startOfDay(Date.now()) - startOfDay(updatedAt)) / 86_400_000);
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays <= 7) return 'Previous 7 Days';
+  if (diffDays <= 30) return 'Previous 30 Days';
+  return 'Older';
+}
+
+function chatItemHtml(c) {
+  return `
     <div class="chat-item ${c.id === currentChatId ? 'active' : ''}" onclick="selectChat(${c.id})">
       <span class="chat-item-title">${escapeHtml(c.title)}</span>
       <button class="chat-item-delete" title="Delete chat" onclick="deleteChat(event, ${c.id})">×</button>
     </div>
-  `).join('');
+  `;
+}
+
+function renderChatList() {
+  const list = document.getElementById('chat-list');
+  if (chats.length === 0) {
+    list.innerHTML = '<div class="chat-list-empty">No chats yet</div>';
+    return;
+  }
+
+  const sections = new Map();
+  for (const c of chats) {
+    const section = chatSectionFor(c.updated_at);
+    if (!sections.has(section)) sections.set(section, []);
+    sections.get(section).push(c);
+  }
+
+  list.innerHTML = CHAT_SECTION_ORDER
+    .filter(section => sections.has(section))
+    .map(section => `
+      <div class="chat-section-label">${section}</div>
+      ${sections.get(section).map(chatItemHtml).join('')}
+    `)
+    .join('');
 }
 
 let chatIdPendingDelete = null;
@@ -941,7 +1126,7 @@ async function handleGeneration() {
         prompt,
         model: selectedModel,
         chatId: currentChatId,
-        projectContext: selectedModel === 'nemotron-3-ultra' ? projectContext : ''
+        projectContext: (selectedModel === 'nemotron-3-ultra' || selectedModel === 'auto') ? projectContext : ''
       }),
       signal: activeAbortController.signal
     });
@@ -979,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadModels();
   loadChats();
+  restoreFolder();
 
   document.getElementById('model-select').addEventListener('change', updateComposerForModel);
 
