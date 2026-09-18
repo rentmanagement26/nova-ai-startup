@@ -96,15 +96,10 @@
       padding: 0 4px;
     }
     .logo-mark {
-      width: 30px;
-      height: 30px;
-      border-radius: 10px;
-      object-fit: cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
       flex-shrink: 0;
-      box-shadow: var(--shadow-sm);
     }
     #new-chat-btn {
       display: flex;
@@ -492,7 +487,6 @@
   <div class="sidebar">
     <div class="sidebar-header">
       <img class="logo-mark" src="/assets/logo.png" alt="Nova logo">
-      Nova
     </div>
     <button id="new-chat-btn" onclick="createNewChat()">+ New Chat</button>
     <div id="chat-list" class="chat-list"></div>
