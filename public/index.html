@@ -6,21 +6,19 @@
   <title>Nova — AI Studio</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     /* ---- Light palette (default) ---- */
     :root {
-      --bg: #f3f5f9;
+      --bg: #eef5fb;
       --surface: #ffffff;
-      --surface-2: #f1f3f8;
-      --surface-3: #e6e9f0;
-      --border: rgba(15, 23, 42, 0.09);
-      --text: #12172b;
-      --muted: #6b7280;
-      --accent-a: #06b6d4;
-      --accent-b: #6366f1;
+      --surface-2: #e4eff8;
+      --surface-3: #d2e3f1;
+      --border: rgba(11, 58, 110, 0.14);
+      --text: #0b2d4d;
+      --muted: #5b7185;
+      --accent-a: #0f5b9a;
+      --accent-b: #25a9d6;
       --danger: #ef4444;
       --danger-bg: rgba(239, 68, 68, 0.08);
       --shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.15);
@@ -30,15 +28,15 @@
     /* ---- Dark palette: follows the OS/system's day-night setting automatically ---- */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
-        --bg: #0d1117;
-        --surface: #161b22;
-        --surface-2: #1c2330;
-        --surface-3: #262f40;
+        --bg: #071a2d;
+        --surface: #0d2944;
+        --surface-2: #123958;
+        --surface-3: #1b4a6d;
         --border: rgba(255, 255, 255, 0.09);
         --text: #eef1f8;
         --muted: #8b93a7;
-        --accent-a: #22d3ee;
-        --accent-b: #818cf8;
+        --accent-a: #39a9e0;
+        --accent-b: #73d4ec;
         --danger: #f87171;
         --danger-bg: rgba(248, 113, 113, 0.1);
         --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
@@ -47,15 +45,15 @@
     }
     /* ---- Explicit override via the theme toggle ---- */
     :root[data-theme="dark"] {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface-2: #1c2330;
-      --surface-3: #262f40;
+      --bg: #071a2d;
+      --surface: #0d2944;
+      --surface-2: #123958;
+      --surface-3: #1b4a6d;
       --border: rgba(255, 255, 255, 0.09);
       --text: #eef1f8;
       --muted: #8b93a7;
-      --accent-a: #22d3ee;
-      --accent-b: #818cf8;
+      --accent-a: #39a9e0;
+      --accent-b: #73d4ec;
       --danger: #f87171;
       --danger-bg: rgba(248, 113, 113, 0.1);
       --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.6);
@@ -89,9 +87,8 @@
     .sidebar-header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      font-size: 16px;
+        flex-direction: column;
+        padding: 18px;
       margin-bottom: 20px;
       padding: 0 4px;
     }
@@ -101,11 +98,11 @@
       object-fit: contain;
       flex-shrink: 0;
     }
-          width: 180px;
-          height: auto;
-          display: block;
-      justify-content: center;
-      gap: 8px;
+    #new-chat-btn {
+      display: flex;
+      flex-direction: column;
+      padding: 18px;
+    }
       width: 100%;
       background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
       border: none;
@@ -161,9 +158,6 @@
       color: var(--muted);
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
-      line-height: 1;
-    }
     .chat-item:hover .chat-item-delete { display: flex; }
     .chat-item-delete:hover { background: var(--surface-3); color: var(--danger); }
 
@@ -203,9 +197,9 @@
       border-radius: 20px;
     }
     #theme-toggle {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: 180px;
+      height: auto;
+      display: block;
       border: 1px solid var(--border);
       background: var(--surface-2);
       color: var(--text);
@@ -480,6 +474,32 @@
     #modal-cancel:hover { background: var(--surface-3); }
     #modal-confirm { background: var(--danger); color: #fff; }
     #modal-confirm:hover { filter: brightness(1.1); }
+
+    @media (max-width: 760px) {
+      body { height: 100dvh; }
+      .sidebar { width: 220px; padding: 14px; }
+      .logo-mark { width: 150px; }
+      header { padding: 14px 18px; }
+      .header-right { gap: 6px; }
+      .badge { display: none; }
+      .thread { padding: 20px 16px; gap: 20px; }
+      .composer { padding: 12px 14px 16px; }
+      .composer-row { flex-wrap: wrap; }
+      select#model-select { flex: 1 1 150px; min-width: 0; }
+      textarea#prompt-input { flex: 1 1 calc(100% - 58px); min-width: 0; }
+      button#gen-btn { margin-left: auto; }
+      .modal-box { width: calc(100vw - 32px); }
+    }
+
+    @media (max-width: 520px) {
+      .sidebar { width: 190px; }
+      .logo-mark { width: 130px; }
+      header h2 { max-width: 46vw; }
+      .thread { padding: 16px 12px; }
+      .composer-row { gap: 8px; }
+      select#model-select { flex-basis: 100%; }
+      textarea#prompt-input { flex-basis: calc(100% - 54px); }
+    }
   </style>
 </head>
 <body>
