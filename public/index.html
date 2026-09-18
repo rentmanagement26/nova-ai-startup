@@ -592,7 +592,8 @@
   <script>
 const EXAMPLE_PROMPTS = [
   'A cat astronaut floating in space',
-  'Neon-lit cyberpunk city at night',
+  'Explain how neural networks learn',
+  'Write a function to reverse a linked list',
   'Cozy cabin in a snowy forest'
 ];
 
@@ -906,18 +907,18 @@ async function loadModels() {
 
 function updateComposerForModel() {
   const model = document.getElementById('model-select').value;
-  const isCode = model === 'nemotron-3-ultra';
+  const isChat = model === 'nemotron-3-ultra';
   const isAuto = model === 'auto';
-  document.getElementById('folder-row').classList.toggle('visible', isCode || isAuto);
-  document.querySelector('.hint').innerText = isCode
-    ? 'Code generation can take up to a minute for detailed answers.'
+  document.getElementById('folder-row').classList.toggle('visible', isChat || isAuto);
+  document.querySelector('.hint').innerText = isChat
+    ? 'Chat responses can take up to a minute for detailed answers.'
     : isAuto
-    ? 'Auto picks the best model for your prompt — image or code.'
+    ? 'Auto picks the best model for your prompt — image, chat, or code.'
     : 'Image generation typically takes 5–10 seconds.';
-  document.getElementById('prompt-input').placeholder = isCode
-    ? 'Describe the code you want...'
+  document.getElementById('prompt-input').placeholder = isChat
+    ? 'Ask anything, or describe the code you want...'
     : isAuto
-    ? 'Describe what you want, or ask a coding question...'
+    ? 'Describe what you want, or ask anything...'
     : 'Describe what you want...';
 }
 
@@ -1033,8 +1034,8 @@ function renderThread(messages) {
   if (messages.length === 0) {
     thread.innerHTML = `
       <div class="empty-state">
-        <h1>What should we create?</h1>
-        <p>Pick a model below, describe what you want, or try one of these:</p>
+        <h1>What can I help with?</h1>
+        <p>Ask a question, describe an image, or try one of these:</p>
         <div class="examples">
           ${EXAMPLE_PROMPTS.map(p => `<div class="example-chip" onclick="useExample('${p.replace(/'/g, "\\'")}')">${escapeHtml(p)}</div>`).join('')}
         </div>
