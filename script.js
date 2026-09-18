@@ -187,7 +187,7 @@ async function saveToFolder(id, btn) {
 async function loadModels() {
   const select = document.getElementById('model-select');
   try {
-    const response = await fetch('http://localhost:3000/api/models');
+    const response = await fetch('/api/models');
     const models = await response.json();
     select.innerHTML = models.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
   } catch (error) {
@@ -237,7 +237,7 @@ async function confirmDeleteChat() {
   closeDeleteModal();
   if (!id) return;
 
-  await fetch(`http://localhost:3000/api/chats/${id}`, { method: 'DELETE' });
+  await fetch(`/api/chats/${id}`, { method: 'DELETE' });
   chats = chats.filter(c => c.id !== id);
 
   if (id !== currentChatId) {
@@ -250,7 +250,7 @@ async function confirmDeleteChat() {
 }
 
 async function loadChats() {
-  const response = await fetch('http://localhost:3000/api/chats');
+  const response = await fetch('/api/chats');
   chats = await response.json();
 
   if (chats.length === 0) {
@@ -263,7 +263,7 @@ async function loadChats() {
 }
 
 async function createNewChat() {
-  const response = await fetch('http://localhost:3000/api/chats', { method: 'POST' });
+  const response = await fetch('/api/chats', { method: 'POST' });
   const chat = await response.json();
   chats.unshift(chat);
   await selectChat(chat.id);
@@ -276,7 +276,7 @@ async function selectChat(id) {
   const chat = chats.find(c => c.id === id);
   document.getElementById('chat-title').innerText = chat ? chat.title : 'New chat';
 
-  const response = await fetch(`http://localhost:3000/api/chats/${id}/messages`);
+  const response = await fetch(`/api/chats/${id}/messages`);
   const messages = await response.json();
   renderThread(messages);
 }
@@ -381,7 +381,7 @@ async function handleGeneration() {
   thread.scrollTop = thread.scrollHeight;
 
   try {
-    const response = await fetch('http://localhost:3000/api/generate', {
+    const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -397,12 +397,12 @@ async function handleGeneration() {
     if (!response.ok) throw new Error(data.error || `Status ${response.status}`);
 
     // Re-render the whole thread from the server so it stays in sync.
-    const messagesResponse = await fetch(`http://localhost:3000/api/chats/${currentChatId}/messages`);
+    const messagesResponse = await fetch(`/api/chats/${currentChatId}/messages`);
     const messages = await messagesResponse.json();
     renderThread(messages);
 
     // Refresh the sidebar in case this was the first message (title changed).
-    const chatsResponse = await fetch('http://localhost:3000/api/chats');
+    const chatsResponse = await fetch('/api/chats');
     chats = await chatsResponse.json();
     renderChatList();
     const chat = chats.find(c => c.id === currentChatId);
