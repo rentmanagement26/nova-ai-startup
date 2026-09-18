@@ -6,3 +6,4 @@ data.db.pre-migration.bak
 generated/
 *.wal
 *.shm
+.DS_Store

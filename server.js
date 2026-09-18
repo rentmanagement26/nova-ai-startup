@@ -12,7 +12,15 @@ if (!NVIDIA_API_KEY) {
 }
 
 // Each NVIDIA-hosted image model has slightly different accepted parameters.
+// Nemotron 3 Ultra is listed first so it's the default selection in the UI.
 const MODELS = {
+  'nemotron-3-ultra': {
+    type: 'chat',
+    label: 'Nemotron 3 Ultra (Chat)',
+    endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    chatModel: 'nvidia/nemotron-3-ultra-550b-a55b',
+    timeoutMs: 90_000
+  },
   'flux.2-klein-4b': {
     type: 'image',
     label: 'FLUX.2 Klein',
@@ -21,13 +29,6 @@ const MODELS = {
     buildBody: (prompt) => ({
       prompt, height: 1024, width: 1024, cfg_scale: 1, samples: 1, seed: 0, steps: 4
     })
-  },
-  'nemotron-3-ultra': {
-    type: 'chat',
-    label: 'Nemotron 3 Ultra (Chat)',
-    endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions',
-    chatModel: 'nvidia/nemotron-3-ultra-550b-a55b',
-    timeoutMs: 90_000
   },
   'nemotron-3.5-lightning': {
     type: 'chat',
@@ -39,38 +40,10 @@ const MODELS = {
   }
 };
 
-// "Auto" lets the client skip picking a model: route anything that reads like a
-// question or a coding request to the chat model, and treat everything else as
-// an image description (the app's original, more literal use case).
-const CODE_SIGNALS = [
-  'code', 'function', 'script', 'bug', 'debug', 'error', 'refactor', 'algorithm',
-  'api', 'class ', 'variable', 'component', 'regex', 'sql', 'python', 'javascript',
-  'typescript', 'java ', 'c++', 'html', 'css', 'json', 'yaml', 'terminal',
-  'command line', 'git ', 'compile', 'syntax', 'stack trace', 'exception',
-  'unit test', 'write a program', 'endpoint', 'database', 'react', 'node'
-];
-const QUESTION_STARTERS = [
-  'what', 'why', 'how', 'who', 'when', 'where', 'which', 'explain', 'describe',
-  'can you', 'could you', 'should i', 'do you', 'does ', 'is it', 'are there',
-  'tell me', 'summarize', 'translate', 'compare', 'help me', 'write me',
-  'give me', 'recommend', 'suggest'
-];
-
-function looksConversational(text) {
-  if (text.includes('?')) return true;
-  return QUESTION_STARTERS.some((starter) => text.startsWith(starter));
-}
-
-function resolveAutoModel(prompt) {
-  const text = prompt.toLowerCase().trim();
-  const isChat = CODE_SIGNALS.some((signal) => text.includes(signal)) || looksConversational(text);
-  return isChat ? 'nemotron-3-ultra' : 'flux.2-klein-4b';
-}
-
 // ---- Database: Turso (libSQL) in production, a local libSQL file in development ----
 // Same client API either way — only the connection target changes.
-const tursoDatabaseUrl = process.env.nova_ai_TURSO_DATABASE_URL ?? process.env.TURSO_DATABASE_URL;
-const tursoAuthToken = process.env.nova_ai_TURSO_AUTH_TOKEN ?? process.env.TURSO_AUTH_TOKEN;
+const tursoDatabaseUrl = process.env.TURSO_DATABASE_URL;
+const tursoAuthToken = process.env.TURSO_AUTH_TOKEN;
 
 const client = createClient(
   tursoDatabaseUrl
@@ -170,9 +143,7 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'A valid chatId is required.' });
   }
 
-  const modelId = req.body.model === 'auto'
-    ? resolveAutoModel(prompt)
-    : (MODELS[req.body.model] ? req.body.model : 'flux.2-klein-4b');
+  const modelId = MODELS[req.body.model] ? req.body.model : 'nemotron-3-ultra';
   const model = MODELS[modelId];
 
   // Abort the upstream NVIDIA request if the client disconnects (e.g. user hit Stop).

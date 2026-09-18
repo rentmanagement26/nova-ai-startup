@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nova — AI Studio</title>
+  <title>Shark — AI Studio</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -544,7 +544,7 @@
 
   <div class="sidebar">
     <div class="sidebar-header">
-      <img id="logo-img" class="logo-mark" src="/assets/logo-1.png" alt="Nova logo">
+      <img id="logo-img" class="logo-mark" src="/assets/logo-1.png" alt="Shark AI Studio logo">
     </div>
     <button id="new-chat-btn" onclick="createNewChat()">+ New Chat</button>
     <div id="chat-list" class="chat-list"></div>
@@ -929,11 +929,10 @@ async function loadModels() {
     const response = await fetch('/api/models');
     const models = await response.json();
     modelTypes = Object.fromEntries(models.map(m => [m.id, m.type]));
-    const options = ['<option value="auto">Auto</option>', ...models.map(m => `<option value="${m.id}">${m.label}</option>`)];
-    select.innerHTML = options.join('');
+    select.innerHTML = models.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
   } catch (error) {
     console.error('Failed to load models:', error);
-    select.innerHTML = '<option value="auto">Auto</option>';
+    select.innerHTML = '<option value="">Default</option>';
   }
   updateComposerForModel();
 }
@@ -941,17 +940,12 @@ async function loadModels() {
 function updateComposerForModel() {
   const model = document.getElementById('model-select').value;
   const isChat = isChatModel(model);
-  const isAuto = model === 'auto';
-  document.getElementById('folder-row').classList.toggle('visible', isChat || isAuto);
+  document.getElementById('folder-row').classList.toggle('visible', isChat);
   document.querySelector('.hint').innerText = isChat
     ? 'Chat responses can take a minute or more for detailed answers.'
-    : isAuto
-    ? 'Auto picks the best model for your prompt — image, chat, or code.'
     : 'Image generation typically takes 5–10 seconds.';
   document.getElementById('prompt-input').placeholder = isChat
     ? 'Ask anything, or describe the code you want...'
-    : isAuto
-    ? 'Describe what you want, or ask anything...'
     : 'Describe what you want...';
 }
 
@@ -1168,7 +1162,7 @@ async function handleGeneration() {
         prompt,
         model: selectedModel,
         chatId: currentChatId,
-        projectContext: (isChatModel(selectedModel) || selectedModel === 'auto') ? projectContext : ''
+        projectContext: isChatModel(selectedModel) ? projectContext : ''
       }),
       signal: activeAbortController.signal
     });
