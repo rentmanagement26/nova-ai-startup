@@ -49,6 +49,21 @@ const MODELS = {
   }
 };
 
+// "Auto" lets the client skip picking a model: route code-shaped prompts to the
+// chat model and everything else to the default image model.
+const CODE_SIGNALS = [
+  'code', 'function', 'script', 'bug', 'debug', 'error', 'refactor', 'algorithm',
+  'api', 'class ', 'variable', 'component', 'regex', 'sql', 'python', 'javascript',
+  'typescript', 'java ', 'c++', 'html', 'css', 'json', 'yaml', 'terminal',
+  'command line', 'git ', 'compile', 'syntax', 'stack trace', 'exception',
+  'unit test', 'write a program', 'endpoint', 'database', 'react', 'node'
+];
+
+function resolveAutoModel(prompt) {
+  const text = prompt.toLowerCase();
+  return CODE_SIGNALS.some((signal) => text.includes(signal)) ? 'nemotron-3-ultra' : 'flux.2-klein-4b';
+}
+
 // ---- Database: Turso (libSQL) in production, a local libSQL file in development ----
 // Same client API either way — only the connection target changes.
 const tursoDatabaseUrl = process.env.nova_ai_TURSO_DATABASE_URL ?? process.env.TURSO_DATABASE_URL;
@@ -152,7 +167,9 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'A valid chatId is required.' });
   }
 
-  const modelId = MODELS[req.body.model] ? req.body.model : 'flux.2-klein-4b';
+  const modelId = req.body.model === 'auto'
+    ? resolveAutoModel(prompt)
+    : (MODELS[req.body.model] ? req.body.model : 'flux.2-klein-4b');
   const model = MODELS[modelId];
 
   // Abort the upstream NVIDIA request if the client disconnects (e.g. user hit Stop).
