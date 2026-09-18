@@ -70,6 +70,28 @@ await client.executeMultiple(`
   );
 `);
 
+// ---- Retention: automatically delete chats (and their messages) older than 7 days ----
+const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function deleteOldChats() {
+  const cutoff = Date.now() - RETENTION_MS;
+  const oldChats = await client.execute({ sql: 'SELECT id FROM chats WHERE updated_at < ?', args: [cutoff] });
+  const ids = oldChats.rows.map((row) => row[0]);
+  if (ids.length === 0) return;
+
+  const placeholders = ids.map(() => '?').join(',');
+  await client.execute({ sql: `DELETE FROM messages WHERE chat_id IN (${placeholders})`, args: ids });
+  await client.execute({ sql: `DELETE FROM chats WHERE id IN (${placeholders})`, args: ids });
+  console.log(`🗑️  Deleted ${ids.length} chat(s) older than 7 days.`);
+}
+
+await deleteOldChats();
+// Vercel recycles the process between requests, so a background interval wouldn't
+// persist there anyway — startup cleanup above already covers each cold start.
+if (!process.env.VERCEL) {
+  setInterval(() => { deleteOldChats().catch((error) => console.error('❌ Retention cleanup failed:', error)); }, 24 * 60 * 60 * 1000);
+}
+
 // Converts a libSQL ResultSet into plain objects — safer for res.json() than
 // relying on the driver's Row proxy having enumerable named properties.
 function rowsToObjects(result) {
